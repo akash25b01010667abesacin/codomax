@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BlogNexus | Register</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav container">
+        <a class="brand" href="index.html">BlogNexus</a>
+        <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+          ☰
+        </button>
+        <div class="nav-links">
+          <a href="index.html">Home</a>
+          <a href="dashboard.html">Dashboard</a>
+          <a href="create-blog.html">Create Blog</a>
+          <a href="login.html">Login</a>
+          <a class="btn small active" href="register.html">Register</a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="auth-page">
+      <div class="container auth-card">
+        <div class="auth-copy">
+          <p class="eyebrow">Create your account</p>
+          <h1>Start your writing journey today.</h1>
+          <p>Join the community and publish your first post with a clean, professional layout.</p>
+        </div>
+        <form class="form-card" data-feedback="Account created! You can log in and start publishing." novalidate>
+          <label>
+            Full name
+            <input type="text" placeholder="Jordan Lee" required />
+          </label>
+          <label>
+            Email
+            <input type="email" placeholder="you@example.com" required />
+          </label>
+          <label>
+            Password
+            <input type="password" placeholder="Create a strong password" required />
+          </label>
+          <button class="btn primary" type="submit">Create account</button>
+          <p class="form-link">Already have an account? <a href="login.html">Log in</a></p>
+          <div class="feedback" aria-live="polite"></div>
+        </form>
+      </div>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BlogNexus | Create Blog</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav container">
+        <a class="brand" href="index.html">BlogNexus</a>
+        <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+          ☰
+        </button>
+        <div class="nav-links">
+          <a href="index.html">Home</a>
+          <a href="dashboard.html">Dashboard</a>
+          <a class="active" href="create-blog.html">Create Blog</a>
+          <a href="login.html">Login</a>
+          <a class="btn small" href="register.html">Register</a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="section">
+      <div class="container create-grid">
+        <div>
+          <p class="eyebrow">Compose</p>
+          <h1>Write something worth reading.</h1>
+          <p>Share your ideas with a layout designed for clarity and flow.</p>
+        </div>
+        <form class="form-card" data-feedback="Your blog draft is ready to publish." novalidate>
+          <label>
+            Title
+            <input type="text" placeholder="A memorable title" required />
+          </label>
+          <label>
+            Category
+            <input type="text" placeholder="Design, Tech, Lifestyle..." required />
+          </label>
+          <label>
+            Content
+            <textarea rows="8" placeholder="Start writing your story..." required></textarea>
+          </label>
+          <button class="btn primary" type="submit">Publish post</button>
+          <div class="feedback" aria-live="polite"></div>
+        </form>
+      </div>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BlogNexus | Home</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav container">
+        <a class="brand" href="index.html">BlogNexus</a>
+        <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+          ☰
+        </button>
+        <div class="nav-links">
+          <a class="active" href="index.html">Home</a>
+          <a href="dashboard.html">Dashboard</a>
+          <a href="create-blog.html">Create Blog</a>
+          <a href="login.html">Login</a>
+          <a class="btn small" href="register.html">Register</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Responsive blogging, reimagined</p>
+            <h1>Share stories that feel as good as they read.</h1>
+            <p>
+              Build your personal brand with a calm, modern space for thought-provoking posts,
+              polished dashboards, and effortless publishing.
+            </p>
+            <div class="hero-actions">
+              <a class="btn primary" href="create-blog.html">Start Writing</a>
+              <a class="btn secondary" href="dashboard.html">Explore Dashboard</a>
+            </div>
+          </div>
+          <div class="hero-card">
+            <h3>Today’s focus</h3>
+            <p>Write your next article, track your growth, and connect with readers.</p>
+            <ul>
+              <li>Fast publishing flow</li>
+              <li>Clean responsive design</li>
+              <li>Simple authentication pages</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container">
+          <div class="section-header">
+            <h2>Trending posts</h2>
+            <a href="dashboard.html">View all</a>
+          </div>
+          <div class="card-grid">
+            <article class="card">
+              <p class="card-tag">Design</p>
+              <h3>Building a better visual rhythm for blogs</h3>
+              <p>Learn how simple spacing and typography choices make reading easier.</p>
+            </article>
+            <article class="card">
+              <p class="card-tag">Productivity</p>
+              <h3>How writers can create without burnout</h3>
+              <p>Practical habits that keep momentum high without sacrificing quality.</p>
+            </article>
+            <article class="card">
+              <p class="card-tag">Growth</p>
+              <h3>From first draft to publish-ready content</h3>
+              <p>Turn rough ideas into focused posts with a reliable editing routine.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section cta-section">
+        <div class="container cta-box">
+          <div>
+            <p class="eyebrow">Ready to launch your voice?</p>
+            <h2>Join thousands of writers creating with clarity.</h2>
+          </div>
+          <a class="btn primary" href="register.html">Create an account</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-row">
+        <p>© <span id="year"></span> BlogNexus. Built for modern writing.</p>
+        <div class="footer-links">
+          <a href="login.html">Login</a>
+          <a href="register.html">Register</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>

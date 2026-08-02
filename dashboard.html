@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BlogNexus | Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav container">
+        <a class="brand" href="index.html">BlogNexus</a>
+        <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+          ☰
+        </button>
+        <div class="nav-links">
+          <a href="index.html">Home</a>
+          <a class="active" href="dashboard.html">Dashboard</a>
+          <a href="create-blog.html">Create Blog</a>
+          <a href="login.html">Login</a>
+          <a class="btn small" href="register.html">Register</a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="section">
+      <div class="container dashboard-grid">
+        <section class="dashboard-main">
+          <div class="section-header">
+            <h1>Welcome back, Jordan</h1>
+            <a class="btn primary" href="create-blog.html">New post</a>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <p>Posts</p>
+              <strong>12</strong>
+            </div>
+            <div class="stat-card">
+              <p>Readers</p>
+              <strong>3.2k</strong>
+            </div>
+            <div class="stat-card">
+              <p>Comments</p>
+              <strong>184</strong>
+            </div>
+          </div>
+
+          <div class="card-list">
+            <article class="list-card">
+              <h3>Designing calm interfaces for modern readers</h3>
+              <p>Published 2 days ago · 1.2k reads</p>
+            </article>
+            <article class="list-card">
+              <h3>How not to overcomplicate your first draft</h3>
+              <p>Published 1 week ago · 860 reads</p>
+            </article>
+            <article class="list-card">
+              <h3>The 3 habits that keep a blog consistent</h3>
+              <p>Published 2 weeks ago · 620 reads</p>
+            </article>
+          </div>
+        </section>
+
+        <aside class="sidebar-card">
+          <h3>Quick tips</h3>
+          <ul>
+            <li>Keep your intro concise.</li>
+            <li>Use headers to guide readers.</li>
+            <li>End with a clear next step.</li>
+          </ul>
+        </aside>
+      </div>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
