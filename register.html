@@ -30,18 +30,18 @@
           <h1>Start your writing journey today.</h1>
           <p>Join the community and publish your first post with a clean, professional layout.</p>
         </div>
-        <form class="form-card" data-feedback="Account created! You can log in and start publishing." novalidate>
+        <form id="register-form" class="form-card" data-feedback="Account created! You can log in and start publishing." novalidate>
           <label>
             Full name
-            <input type="text" placeholder="Jordan Lee" required />
+            <input type="text" name="name" placeholder="Jordan Lee" required />
           </label>
           <label>
             Email
-            <input type="email" placeholder="you@example.com" required />
+            <input type="email" name="email" placeholder="you@example.com" required />
           </label>
           <label>
             Password
-            <input type="password" placeholder="Create a strong password" required />
+            <input type="password" name="password" placeholder="Create a strong password" required />
           </label>
           <button class="btn primary" type="submit">Create account</button>
           <p class="form-link">Already have an account? <a href="login.html">Log in</a></p>

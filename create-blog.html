@@ -30,18 +30,18 @@
           <h1>Write something worth reading.</h1>
           <p>Share your ideas with a layout designed for clarity and flow.</p>
         </div>
-        <form class="form-card" data-feedback="Your blog draft is ready to publish." novalidate>
+        <form id="blog-form" class="form-card" data-feedback="Your blog draft is ready to publish." novalidate>
           <label>
             Title
-            <input type="text" placeholder="A memorable title" required />
+            <input type="text" name="title" placeholder="A memorable title" required />
           </label>
           <label>
             Category
-            <input type="text" placeholder="Design, Tech, Lifestyle..." required />
+            <input type="text" name="category" placeholder="Design, Tech, Lifestyle..." required />
           </label>
           <label>
             Content
-            <textarea rows="8" placeholder="Start writing your story..." required></textarea>
+            <textarea name="content" rows="8" placeholder="Start writing your story..." required></textarea>
           </label>
           <button class="btn primary" type="submit">Publish post</button>
           <div class="feedback" aria-live="polite"></div>
