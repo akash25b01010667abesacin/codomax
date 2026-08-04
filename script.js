@@ -38,34 +38,105 @@ document.addEventListener('DOMContentLoaded', () => {
     greeting.textContent = `Welcome back, ${currentUser.name}`;
   }
 
+  const blogList = document.getElementById('blog-list');
+  const postCount = document.getElementById('post-count');
+
   const loadBlogs = async () => {
-    const blogList = document.getElementById('blog-list');
     if (!blogList) {
       return;
     }
+
+    blogList.innerHTML = '<article class="list-card"><h3>Loading posts…</h3><p>Please wait while we fetch the latest content.</p></article>';
 
     try {
       const response = await fetch(`${apiBaseUrl}/api/blogs`);
       const blogs = await response.json();
       if (!Array.isArray(blogs)) {
-        return;
+        throw new Error('Invalid blog response.');
+      }
+
+      if (postCount) {
+        postCount.textContent = String(blogs.length);
       }
 
       blogList.innerHTML = blogs.length
-        ? blogs.map((blog) => `
-            <article class="list-card">
-              <h3>${blog.title}</h3>
-              <p>${blog.category} · ${new Date(blog.createdAt).toLocaleDateString()}</p>
-              <p>${blog.content}</p>
-            </article>
-          `).join('')
+        ? blogs.map((blog) => {
+            const excerpt = (blog.content || '').slice(0, 180);
+            return `
+              <article class="list-card">
+                <div class="blog-card-top">
+                  <div>
+                    <h3>${blog.title}</h3>
+                    <p>${blog.category} · ${new Date(blog.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <a class="blog-link" href="blog.html?id=${blog.id}">Read more</a>
+                </div>
+                <p>${excerpt}${(blog.content || '').length > 180 ? '…' : ''}</p>
+              </article>
+            `;
+          }).join('')
         : '<article class="list-card"><h3>No posts yet</h3><p>Create your first blog post to see it here.</p></article>';
     } catch (error) {
       console.error('Unable to load blogs', error);
+      blogList.innerHTML = '<article class="list-card"><h3>Unable to load posts</h3><p>Make sure the server is running on port 3000.</p></article>';
+    }
+  };
+
+  const loadBlogDetail = async () => {
+    const detailContainer = document.getElementById('blog-detail');
+    const blogTitle = document.getElementById('blog-title');
+    const blogMeta = document.getElementById('blog-meta');
+    const blogContent = document.getElementById('blog-content');
+    const emptyState = document.getElementById('blog-empty');
+
+    if (!detailContainer) {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const blogId = params.get('id');
+
+    if (!blogId) {
+      if (emptyState) {
+        emptyState.hidden = false;
+      }
+      detailContainer.hidden = true;
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/blogs/${blogId}`);
+      const data = await response.json();
+      if (!response.ok || !data.blog) {
+        throw new Error(data.message || 'Blog not found.');
+      }
+
+      const blog = data.blog;
+      if (blogTitle) {
+        blogTitle.textContent = blog.title;
+      }
+      if (blogMeta) {
+        blogMeta.textContent = `${blog.category} · ${new Date(blog.createdAt).toLocaleDateString()}`;
+      }
+      if (blogContent) {
+        blogContent.textContent = blog.content;
+      }
+      detailContainer.hidden = false;
+      if (emptyState) {
+        emptyState.hidden = true;
+      }
+    } catch (error) {
+      console.error('Unable to load blog detail', error);
+      if (emptyState) {
+        emptyState.hidden = false;
+        emptyState.textContent = 'This blog could not be loaded right now.';
+      }
+      detailContainer.hidden = true;
     }
   };
 
   loadBlogs();
+  loadBlogDetail();
 
   const forms = document.querySelectorAll('form');
   forms.forEach((form) => {
@@ -120,6 +191,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
           }
           window.location.href = 'login.html';
+          return;
+        }
+
+        if (form.id === 'blog-form') {
+          window.location.href = 'dashboard.html';
           return;
         }
 

@@ -1,10 +1,23 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const { app, users, blogs } = require('./server');
 const request = require('supertest');
 
-test('registers a new user', async () => {
+const storePath = path.join(__dirname, 'data', 'store.json');
+
+function resetStore() {
   users.length = 0;
+  blogs.length = 0;
+  fs.rmSync(storePath, { force: true });
+}
+
+test.beforeEach(() => {
+  resetStore();
+});
+
+test('registers a new user', async () => {
   const response = await request(app)
     .post('/api/register')
     .send({ name: 'Ada', email: 'ada@example.com', password: 'secure123' });
@@ -14,7 +27,6 @@ test('registers a new user', async () => {
 });
 
 test('logs in an existing user', async () => {
-  users.length = 0;
   users.push({ id: '1', name: 'Ada', email: 'ada@example.com', password: 'secure123' });
 
   const response = await request(app)
@@ -26,11 +38,19 @@ test('logs in an existing user', async () => {
 });
 
 test('creates a blog post', async () => {
-  blogs.length = 0;
   const response = await request(app)
     .post('/api/blogs')
     .send({ title: 'Hello', category: 'Tech', content: 'A sample post' });
 
   assert.equal(response.status, 201);
   assert.equal(response.body.blog.title, 'Hello');
+});
+
+test('retrieves a blog by id', async () => {
+  blogs.push({ id: 'blog-1', title: 'Hello', category: 'Tech', content: 'A sample post', createdAt: '2024-01-01T00:00:00.000Z' });
+
+  const response = await request(app).get('/api/blogs/blog-1');
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.blog.id, 'blog-1');
 });

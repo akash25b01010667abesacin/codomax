@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BlogNexus | Blog Details</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav container">
+        <a class="brand" href="index.html">BlogNexus</a>
+        <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+          ☰
+        </button>
+        <div class="nav-links">
+          <a href="index.html">Home</a>
+          <a href="dashboard.html">Dashboard</a>
+          <a href="create-blog.html">Create Blog</a>
+          <a href="login.html">Login</a>
+          <a class="btn small" href="register.html">Register</a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="section">
+      <div class="container">
+        <a class="blog-link" href="dashboard.html">← Back to dashboard</a>
+        <div id="blog-empty" class="blog-empty">Select a post from the dashboard to view it here.</div>
+        <article id="blog-detail" class="blog-detail-card" hidden>
+          <p class="eyebrow">Featured article</p>
+          <h1 id="blog-title">Blog title</h1>
+          <p id="blog-meta">Category · Date</p>
+          <div id="blog-content" class="blog-content"></div>
+        </article>
+      </div>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,6 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
+
+let MongoClient;
+try {
+  ({ MongoClient } = require('mongodb'));
+} catch (error) {
+  MongoClient = null;
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,14 +18,115 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
+const dataDir = path.join(__dirname, 'data');
+const dataFilePath = path.join(dataDir, 'store.json');
+
 const users = [];
 const blogs = [];
 
-app.get('/api/health', (req, res) => {
+let mongoDb = null;
+let storeMode = 'file';
+let initialized = false;
+
+function ensureDataDir() {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+function saveStore() {
+  ensureDataDir();
+  fs.writeFileSync(dataFilePath, JSON.stringify({ users, blogs }, null, 2));
+
+  if (storeMode === 'mongo' && mongoDb) {
+    const usersCollection = mongoDb.collection('users');
+    const blogsCollection = mongoDb.collection('blogs');
+
+    Promise.all([
+      usersCollection.deleteMany({}),
+      blogsCollection.deleteMany({})
+    ])
+      .then(() => Promise.all([
+        users.length ? usersCollection.insertMany(users) : Promise.resolve(),
+        blogs.length ? blogsCollection.insertMany(blogs) : Promise.resolve()
+      ]))
+      .catch((error) => {
+        console.warn('Unable to sync data to MongoDB:', error.message);
+      });
+  }
+}
+
+function loadStore() {
+  ensureDataDir();
+  if (!fs.existsSync(dataFilePath)) {
+    saveStore();
+    return;
+  }
+
+  try {
+    const raw = fs.readFileSync(dataFilePath, 'utf8');
+    const parsed = JSON.parse(raw);
+    users.splice(0, users.length, ...(Array.isArray(parsed.users) ? parsed.users : []));
+    blogs.splice(0, blogs.length, ...(Array.isArray(parsed.blogs) ? parsed.blogs : []));
+  } catch (error) {
+    users.splice(0, users.length);
+    blogs.splice(0, blogs.length);
+    saveStore();
+  }
+}
+
+function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
+  const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
+  return { salt, hash };
+}
+
+function verifyPassword(password, storedSalt, storedHash) {
+  const { hash } = hashPassword(password, storedSalt);
+  return hash === storedHash;
+}
+
+async function initializeStore() {
+  if (initialized) {
+    return;
+  }
+
+  initialized = true;
+
+  if (process.env.NODE_ENV === 'test') {
+    users.splice(0, users.length);
+    blogs.splice(0, blogs.length);
+    return;
+  }
+
+  if (process.env.MONGODB_URI && MongoClient) {
+    try {
+      const client = new MongoClient(process.env.MONGODB_URI);
+      await client.connect();
+      mongoDb = client.db(process.env.MONGODB_DB || 'codomax');
+      storeMode = 'mongo';
+
+      const [mongoUsers, mongoBlogs] = await Promise.all([
+        mongoDb.collection('users').find({}).toArray(),
+        mongoDb.collection('blogs').find({}).toArray()
+      ]);
+
+      users.splice(0, users.length, ...mongoUsers);
+      blogs.splice(0, blogs.length, ...mongoBlogs);
+      return;
+    } catch (error) {
+      console.warn('MongoDB unavailable, falling back to file storage:', error.message);
+    }
+  }
+
+  loadStore();
+}
+
+app.get('/api/health', async (req, res) => {
+  await initializeStore();
   res.json({ ok: true, message: 'BlogNexus backend is running' });
 });
 
-app.post('/api/register', (req, res) => {
+app.post('/api/register', async (req, res) => {
+  await initializeStore();
+
   const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
@@ -28,28 +138,39 @@ app.post('/api/register', (req, res) => {
     return res.status(409).json({ message: 'User already exists.' });
   }
 
-  const user = { id: Date.now().toString(), name, email, password };
+  const { salt, hash } = hashPassword(password);
+  const user = { id: Date.now().toString(), name, email, passwordSalt: salt, passwordHash: hash };
   users.push(user);
+  saveStore();
 
   res.status(201).json({ message: 'User registered successfully.', user: { id: user.id, name, email } });
 });
 
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
+  await initializeStore();
+
   const { email, password } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ message: 'Email and password are required.' });
   }
 
-  const user = users.find((entry) => entry.email === email && entry.password === password);
-  if (!user) {
+  const user = users.find((entry) => entry.email === email);
+  const isValidPassword = user && (
+    (user.passwordHash && user.passwordSalt && verifyPassword(password, user.passwordSalt, user.passwordHash)) ||
+    user.password === password
+  );
+
+  if (!user || !isValidPassword) {
     return res.status(401).json({ message: 'Invalid credentials.' });
   }
 
   res.json({ message: 'Login successful.', user: { id: user.id, name: user.name, email: user.email } });
 });
 
-app.post('/api/blogs', (req, res) => {
+app.post('/api/blogs', async (req, res) => {
+  await initializeStore();
+
   const { title, category, content } = req.body;
 
   if (!title || !category || !content) {
@@ -65,11 +186,25 @@ app.post('/api/blogs', (req, res) => {
   };
 
   blogs.push(blog);
+  saveStore();
   res.status(201).json({ message: 'Blog created successfully.', blog });
 });
 
-app.get('/api/blogs', (req, res) => {
-  res.json(blogs);
+app.get('/api/blogs', async (req, res) => {
+  await initializeStore();
+  const sortedBlogs = blogs.slice().sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt));
+  res.json(sortedBlogs);
+});
+
+app.get('/api/blogs/:id', async (req, res) => {
+  await initializeStore();
+  const blog = blogs.find((entry) => entry.id === req.params.id);
+
+  if (!blog) {
+    return res.status(404).json({ message: 'Blog not found.' });
+  }
+
+  res.json({ blog });
 });
 
 app.get('*', (req, res) => {
