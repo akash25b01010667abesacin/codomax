@@ -54,3 +54,26 @@ test('retrieves a blog by id', async () => {
   assert.equal(response.status, 200);
   assert.equal(response.body.blog.id, 'blog-1');
 });
+
+test('updates a blog post', async () => {
+  blogs.push({ id: 'blog-1', title: 'Hello', category: 'Tech', content: 'A sample post', createdAt: '2024-01-01T00:00:00.000Z' });
+
+  const response = await request(app)
+    .put('/api/blogs/blog-1')
+    .send({ title: 'Hello Updated', category: 'Tech Updated', content: 'Updated content' });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.blog.title, 'Hello Updated');
+  assert.equal(response.body.blog.category, 'Tech Updated');
+  assert.equal(response.body.blog.content, 'Updated content');
+});
+
+test('deletes a blog post', async () => {
+  blogs.push({ id: 'blog-1', title: 'Hello', category: 'Tech', content: 'A sample post', createdAt: '2024-01-01T00:00:00.000Z' });
+
+  const response = await request(app).delete('/api/blogs/blog-1');
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.blog.id, 'blog-1');
+  assert.equal(blogs.length, 0);
+});

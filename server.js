@@ -207,6 +207,45 @@ app.get('/api/blogs/:id', async (req, res) => {
   res.json({ blog });
 });
 
+app.put('/api/blogs/:id', async (req, res) => {
+  await initializeStore();
+  const blogIndex = blogs.findIndex((entry) => entry.id === req.params.id);
+
+  if (blogIndex === -1) {
+    return res.status(404).json({ message: 'Blog not found.' });
+  }
+
+  const { title, category, content } = req.body;
+
+  if (!title || !category || !content) {
+    return res.status(400).json({ message: 'Title, category, and content are required.' });
+  }
+
+  blogs[blogIndex] = {
+    ...blogs[blogIndex],
+    title,
+    category,
+    content,
+    updatedAt: new Date().toISOString()
+  };
+
+  saveStore();
+  res.json({ message: 'Blog updated successfully.', blog: blogs[blogIndex] });
+});
+
+app.delete('/api/blogs/:id', async (req, res) => {
+  await initializeStore();
+  const blogIndex = blogs.findIndex((entry) => entry.id === req.params.id);
+
+  if (blogIndex === -1) {
+    return res.status(404).json({ message: 'Blog not found.' });
+  }
+
+  const deletedBlog = blogs.splice(blogIndex, 1)[0];
+  saveStore();
+  res.json({ message: 'Blog deleted successfully.', blog: deletedBlog });
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });

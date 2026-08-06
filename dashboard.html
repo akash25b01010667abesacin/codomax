@@ -46,6 +46,13 @@
             </div>
           </div>
 
+          <div class="filters-bar" style="margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+            <input type="text" id="search-input" placeholder="Search blogs..." class="form-control" style="flex: 1; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 0.85rem; background: var(--surface-2); font: inherit;" />
+            <select id="category-filter" class="form-control" style="padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 0.85rem; background: var(--surface-2); font: inherit; min-width: 160px; cursor: pointer;">
+              <option value="">All Categories</option>
+            </select>
+          </div>
+
           <div class="card-list" id="blog-list">
             <article class="list-card">
               <h3>Designing calm interfaces for modern readers</h3>
