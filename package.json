@@ -2,17 +2,19 @@
   "name": "codomax",
   "version": "1.0.0",
   "description": "BlogNexus backend with Express API",
+  "homepage": "https://akash25b01010667abesacin.github.io/codomax",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "deploy": "gh-pages -d ."
   },
   "dependencies": {
     "cors": "^2.8.0",
     "express": "^4.19.0"
   },
   "devDependencies": {
+    "gh-pages": "^6.3.0",
     "supertest": "^7.0.0"
   }
-  
 }
