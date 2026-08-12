@@ -1,12 +1,20 @@
 {
   "users": [
     {
-      "id": "ada@example.com-id",
-      "name": "Ada",
-      "email": "ada@example.com",
-      "passwordSalt": "test-salt",
-      "passwordHash": "f2130600d06e4ec1508fab114ae3d7e687ab53be27d053d48b3dc5f6da98d6da613c25245245c264f3cea0f18aec1e6576039d78225a014fee9149b3395d0e3f"
+      "id": "1786539655245",
+      "name": "Akash Chourasia",
+      "email": "akashchourasia9918@gmail.com",
+      "passwordSalt": "9926ea3aa7b1c8c74c36009116514a5a",
+      "passwordHash": "1ab56cfabde4e5ea423e649928ba61171145bc62ab009121de84e3a3c40e64b6fbe492ec6d63f4b9deaa1a2e146eac5784e15c04726ff8b34a1c739a8354d9f9"
     }
   ],
-  "blogs": []
+  "blogs": [
+    {
+      "id": "1786538605710",
+      "title": "ai",
+      "category": "tech",
+      "content": "asdfgh",
+      "createdAt": "2026-08-12T12:43:25.711Z"
+    }
+  ]
 }
