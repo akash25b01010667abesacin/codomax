@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutButton.addEventListener('click', logout);
   }
 
-  const protectedPages = ['dashboard.html', 'create-blog.html'];
+  const protectedPages = ['dashboard.html'];
   const currentPage = window.location.pathname.split('/').pop();
   const token = getAuthToken();
 
@@ -289,6 +289,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!isValid) {
         setFeedback(form, 'Please complete every required field.', true);
+        return;
+      }
+
+      if (!getAuthToken()) {
+        window.location.href = 'login.html';
         return;
       }
 
