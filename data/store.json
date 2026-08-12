@@ -1,4 +1,12 @@
 {
-  "users": [],
+  "users": [
+    {
+      "id": "ada@example.com-id",
+      "name": "Ada",
+      "email": "ada@example.com",
+      "passwordSalt": "test-salt",
+      "passwordHash": "f2130600d06e4ec1508fab114ae3d7e687ab53be27d053d48b3dc5f6da98d6da613c25245245c264f3cea0f18aec1e6576039d78225a014fee9149b3395d0e3f"
+    }
+  ],
   "blogs": []
 }

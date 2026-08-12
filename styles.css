@@ -305,6 +305,19 @@ textarea {
   color: var(--muted);
 }
 
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin: 1.2rem 0;
+}
+
+.toolbar input,
+.toolbar select {
+  flex: 1;
+  min-width: 180px;
+}
+
 .blog-card-top {
   display: flex;
   align-items: flex-start;
@@ -313,10 +326,28 @@ textarea {
   margin-bottom: 0.6rem;
 }
 
+.blog-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .blog-link {
   color: var(--accent);
   font-weight: 700;
   white-space: nowrap;
+}
+
+.blog-delete {
+  border: 0;
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .blog-detail-card {

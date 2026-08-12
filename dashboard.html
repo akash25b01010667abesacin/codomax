@@ -46,31 +46,30 @@
             </div>
           </div>
 
-          <div class="filters-bar" style="margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
-            <input type="text" id="search-input" placeholder="Search blogs..." class="form-control" style="flex: 1; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 0.85rem; background: var(--surface-2); font: inherit;" />
-            <select id="category-filter" class="form-control" style="padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 0.85rem; background: var(--surface-2); font: inherit; min-width: 160px; cursor: pointer;">
-              <option value="">All Categories</option>
+          <div class="toolbar">
+            <input id="blog-search" type="search" placeholder="Search blogs..." aria-label="Search blogs" />
+            <select id="blog-category-filter" aria-label="Filter by category">
+              <option value="">All categories</option>
+              <option value="Tech">Tech</option>
+              <option value="Design">Design</option>
+              <option value="Lifestyle">Lifestyle</option>
+              <option value="Business">Business</option>
             </select>
           </div>
 
           <div class="card-list" id="blog-list">
             <article class="list-card">
-              <h3>Designing calm interfaces for modern readers</h3>
-              <p>Published 2 days ago · 1.2k reads</p>
-            </article>
-            <article class="list-card">
-              <h3>How not to overcomplicate your first draft</h3>
-              <p>Published 1 week ago · 860 reads</p>
-            </article>
-            <article class="list-card">
-              <h3>The 3 habits that keep a blog consistent</h3>
-              <p>Published 2 weeks ago · 620 reads</p>
+              <h3>Loading posts…</h3>
+              <p>Please wait while we fetch the latest content.</p>
             </article>
           </div>
         </section>
 
         <aside class="sidebar-card">
-          <h3>Quick tips</h3>
+          <h3>Profile</h3>
+          <p id="profile-name">User</p>
+          <button id="logout-button" type="button" class="btn secondary" style="width: 100%; margin-top: 0.8rem;">Logout</button>
+          <h3 style="margin-top: 1.5rem;">Quick tips</h3>
           <ul>
             <li>Keep your intro concise.</li>
             <li>Use headers to guide readers.</li>

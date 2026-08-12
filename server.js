@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 
 let MongoClient;
 try {
@@ -83,6 +84,31 @@ function verifyPassword(password, storedSalt, storedHash) {
   return hash === storedHash;
 }
 
+function signToken(user) {
+  return jwt.sign(
+    { id: user.id, email: user.email, name: user.name },
+    process.env.JWT_SECRET || 'codomax-dev-secret',
+    { expiresIn: '7d' }
+  );
+}
+
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+  if (!token) {
+    return res.status(401).json({ message: 'Authentication required.' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'codomax-dev-secret');
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: 'Invalid or expired token.' });
+  }
+}
+
 async function initializeStore() {
   if (initialized) {
     return;
@@ -143,7 +169,12 @@ app.post('/api/register', async (req, res) => {
   users.push(user);
   saveStore();
 
-  res.status(201).json({ message: 'User registered successfully.', user: { id: user.id, name, email } });
+  const token = signToken(user);
+  res.status(201).json({
+    message: 'User registered successfully.',
+    token,
+    user: { id: user.id, name, email }
+  });
 });
 
 app.post('/api/login', async (req, res) => {
@@ -165,10 +196,28 @@ app.post('/api/login', async (req, res) => {
     return res.status(401).json({ message: 'Invalid credentials.' });
   }
 
-  res.json({ message: 'Login successful.', user: { id: user.id, name: user.name, email: user.email } });
+  const token = signToken(user);
+  res.json({
+    message: 'Login successful.',
+    token,
+    user: { id: user.id, name: user.name, email: user.email }
+  });
 });
 
-app.post('/api/blogs', async (req, res) => {
+app.get('/api/me', authenticateToken, async (req, res) => {
+  await initializeStore();
+  const user = users.find((entry) => entry.id === req.user.id || entry.email === req.user.email);
+
+  if (!user) {
+    return res.status(404).json({ message: 'User not found.' });
+  }
+
+  res.json({
+    user: { id: user.id, name: user.name, email: user.email }
+  });
+});
+
+app.post('/api/blogs', authenticateToken, async (req, res) => {
   await initializeStore();
 
   const { title, category, content } = req.body;
@@ -179,6 +228,7 @@ app.post('/api/blogs', async (req, res) => {
 
   const blog = {
     id: Date.now().toString(),
+    userId: req.user.id,
     title,
     category,
     content,
@@ -192,7 +242,36 @@ app.post('/api/blogs', async (req, res) => {
 
 app.get('/api/blogs', async (req, res) => {
   await initializeStore();
-  const sortedBlogs = blogs.slice().sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt));
+
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  let currentUser = null;
+
+  if (token) {
+    try {
+      currentUser = jwt.verify(token, process.env.JWT_SECRET || 'codomax-dev-secret');
+    } catch (error) {
+      return res.status(401).json({ message: 'Invalid or expired token.' });
+    }
+  }
+
+  const search = (req.query.search || '').toString().trim().toLowerCase();
+  const category = (req.query.category || '').toString().trim().toLowerCase();
+
+  let filteredBlogs = blogs.filter((blog) => {
+    const matchesSearch = !search || [blog.title, blog.category, blog.content].some((value) =>
+      (value || '').toString().toLowerCase().includes(search)
+    );
+    const matchesCategory = !category || (blog.category || '').toString().toLowerCase() === category;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  if (currentUser) {
+    filteredBlogs = filteredBlogs.filter((blog) => blog.userId === currentUser.id);
+  }
+
+  const sortedBlogs = filteredBlogs.sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt));
   res.json(sortedBlogs);
 });
 
@@ -207,12 +286,17 @@ app.get('/api/blogs/:id', async (req, res) => {
   res.json({ blog });
 });
 
-app.put('/api/blogs/:id', async (req, res) => {
+app.put('/api/blogs/:id', authenticateToken, async (req, res) => {
   await initializeStore();
   const blogIndex = blogs.findIndex((entry) => entry.id === req.params.id);
 
   if (blogIndex === -1) {
     return res.status(404).json({ message: 'Blog not found.' });
+  }
+
+  const blog = blogs[blogIndex];
+  if (blog.userId !== req.user.id) {
+    return res.status(403).json({ message: 'You can only update your own blogs.' });
   }
 
   const { title, category, content } = req.body;
@@ -222,7 +306,7 @@ app.put('/api/blogs/:id', async (req, res) => {
   }
 
   blogs[blogIndex] = {
-    ...blogs[blogIndex],
+    ...blog,
     title,
     category,
     content,
@@ -233,12 +317,17 @@ app.put('/api/blogs/:id', async (req, res) => {
   res.json({ message: 'Blog updated successfully.', blog: blogs[blogIndex] });
 });
 
-app.delete('/api/blogs/:id', async (req, res) => {
+app.delete('/api/blogs/:id', authenticateToken, async (req, res) => {
   await initializeStore();
   const blogIndex = blogs.findIndex((entry) => entry.id === req.params.id);
 
   if (blogIndex === -1) {
     return res.status(404).json({ message: 'Blog not found.' });
+  }
+
+  const blog = blogs[blogIndex];
+  if (blog.userId !== req.user.id) {
+    return res.status(403).json({ message: 'You can only delete your own blogs.' });
   }
 
   const deletedBlog = blogs.splice(blogIndex, 1)[0];

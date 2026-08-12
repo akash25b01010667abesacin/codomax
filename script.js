@@ -15,6 +15,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const apiBaseUrl = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
+  const getAuthToken = () => localStorage.getItem('blogNexusToken');
+  const setAuthToken = (token) => {
+    if (token) {
+      localStorage.setItem('blogNexusToken', token);
+    } else {
+      localStorage.removeItem('blogNexusToken');
+    }
+  };
+
+  const logout = () => {
+    setAuthToken(null);
+    localStorage.removeItem('blogNexusUser');
+    window.location.href = 'login.html';
+  };
 
   const setFeedback = (form, message, isError = false) => {
     const feedback = form.querySelector('.feedback');
@@ -38,88 +52,130 @@ document.addEventListener('DOMContentLoaded', () => {
     greeting.textContent = `Welcome back, ${currentUser.name}`;
   }
 
+  const profileName = document.getElementById('profile-name');
+  if (profileName && currentUser?.name) {
+    profileName.textContent = currentUser.name;
+  }
+
+  const logoutButton = document.getElementById('logout-button');
+  if (logoutButton) {
+    logoutButton.addEventListener('click', logout);
+  }
+
+  const protectedPages = ['dashboard.html', 'create-blog.html'];
+  const currentPage = window.location.pathname.split('/').pop();
+  const token = getAuthToken();
+
+  if (protectedPages.includes(currentPage) && !token) {
+    window.location.href = 'login.html';
+    return;
+  }
+
   const blogList = document.getElementById('blog-list');
   const postCount = document.getElementById('post-count');
-  const searchInput = document.getElementById('search-input');
-  const categoryFilter = document.getElementById('category-filter');
+  const searchInput = document.getElementById('blog-search');
+  const categoryFilter = document.getElementById('blog-category-filter');
 
-  let allBlogs = [];
-
-  const renderBlogs = (blogsToRender) => {
-    if (postCount) {
-      postCount.textContent = String(blogsToRender.length);
-    }
-
-    blogList.innerHTML = blogsToRender.length
-      ? blogsToRender.map((blog) => {
-          const excerpt = (blog.content || '').slice(0, 180);
-          return `
-            <article class="list-card">
-              <div class="blog-card-top">
-                <div>
-                  <h3>${blog.title}</h3>
-                  <p>${blog.category} · ${new Date(blog.createdAt).toLocaleDateString()}</p>
-                </div>
-                <a class="blog-link" href="blog.html?id=${blog.id}">Read more</a>
-              </div>
-              <p>${excerpt}${(blog.content || '').length > 180 ? '…' : ''}</p>
-            </article>
-          `;
-        }).join('')
-      : '<article class="list-card"><h3>No matching posts found</h3><p>Try resetting your search or filters.</p></article>';
-  };
-
-  const applyFilters = () => {
-    const searchTerm = (searchInput ? searchInput.value : '').toLowerCase().trim();
-    const selectedCategory = categoryFilter ? categoryFilter.value : '';
-
-    const filtered = allBlogs.filter((blog) => {
-      const matchesSearch = !searchTerm ||
-        (blog.title || '').toLowerCase().includes(searchTerm) ||
-        (blog.content || '').toLowerCase().includes(searchTerm) ||
-        (blog.category || '').toLowerCase().includes(searchTerm);
-      const matchesCategory = !selectedCategory || blog.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-
-    renderBlogs(filtered);
-  };
-
-  const populateCategories = (blogs) => {
-    if (!categoryFilter) return;
-    const categories = Array.from(new Set(blogs.map((blog) => blog.category).filter(Boolean)));
-    categoryFilter.innerHTML = '<option value="">All Categories</option>' +
-      categories.map((cat) => `<option value="${cat}">${cat}</option>`).join('');
-  };
-
-  const loadBlogs = async () => {
+  async function loadBlogs() {
     if (!blogList) {
       return;
     }
 
+    const params = new URLSearchParams();
+    const searchValue = searchInput?.value.trim() || '';
+    const categoryValue = categoryFilter?.value || '';
+
+    if (searchValue) params.set('search', searchValue);
+    if (categoryValue) params.set('category', categoryValue);
+
     blogList.innerHTML = '<article class="list-card"><h3>Loading posts…</h3><p>Please wait while we fetch the latest content.</p></article>';
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/blogs`);
-      allBlogs = await response.json();
-      if (!Array.isArray(allBlogs)) {
+      const headers = { 'Content-Type': 'application/json' };
+      const token = getAuthToken();
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${apiBaseUrl}/api/blogs${params.toString() ? `?${params.toString()}` : ''}`, { headers });
+      const blogs = await response.json();
+      if (response.status === 401) {
+        logout();
+        return;
+      }
+      if (!Array.isArray(blogs)) {
         throw new Error('Invalid blog response.');
       }
 
-      populateCategories(allBlogs);
-      renderBlogs(allBlogs);
+      if (postCount) {
+        postCount.textContent = String(blogs.length);
+      }
 
-      if (searchInput) {
-        searchInput.addEventListener('input', applyFilters);
-      }
-      if (categoryFilter) {
-        categoryFilter.addEventListener('change', applyFilters);
-      }
+      blogList.innerHTML = blogs.length
+        ? blogs.map((blog) => {
+            const excerpt = (blog.content || '').slice(0, 180);
+            return `
+              <article class="list-card">
+                <div class="blog-card-top">
+                  <div>
+                    <h3>${blog.title}</h3>
+                    <p>${blog.category} · ${new Date(blog.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <div class="blog-actions">
+                    <a class="blog-link" href="blog.html?id=${blog.id}">Read</a>
+                    <a class="blog-link" href="create-blog.html?id=${blog.id}">Edit</a>
+                    <button class="blog-delete" type="button" data-delete-id="${blog.id}">Delete</button>
+                  </div>
+                </div>
+                <p>${excerpt}${(blog.content || '').length > 180 ? '…' : ''}</p>
+              </article>
+            `;
+          }).join('')
+        : '<article class="list-card"><h3>No posts yet</h3><p>Create your first blog post to see it here.</p></article>';
+
+      blogList.querySelectorAll('[data-delete-id]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const blogId = button.dataset.deleteId;
+          const confirmed = window.confirm('Delete this blog?');
+          if (!confirmed) {
+            return;
+          }
+
+          try {
+            const response = await fetch(`${apiBaseUrl}/api/blogs/${blogId}`, {
+              method: 'DELETE',
+              headers: {
+                Authorization: `Bearer ${getAuthToken()}`
+              }
+            });
+            const data = await response.json().catch(() => ({ message: 'Unable to delete blog.' }));
+            if (response.status === 401) {
+              logout();
+              return;
+            }
+            if (!response.ok) {
+              throw new Error(data.message || 'Unable to delete blog.');
+            }
+            loadBlogs();
+          } catch (error) {
+            console.error('Unable to delete blog', error);
+            window.alert(error.message || 'Unable to delete blog.');
+          }
+        });
+      });
     } catch (error) {
       console.error('Unable to load blogs', error);
       blogList.innerHTML = '<article class="list-card"><h3>Unable to load posts</h3><p>Make sure the server is running on port 3000.</p></article>';
     }
-  };
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', loadBlogs);
+  }
+
+  if (categoryFilter) {
+    categoryFilter.addEventListener('change', loadBlogs);
+  }
 
   const loadBlogDetail = async () => {
     const detailContainer = document.getElementById('blog-detail');
@@ -151,19 +207,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const blog = data.blog;
-      if (blogTitle) {
-        blogTitle.textContent = blog.title;
-      }
-      if (blogMeta) {
-        blogMeta.textContent = `${blog.category} · ${new Date(blog.createdAt).toLocaleDateString()}`;
-      }
-      if (blogContent) {
-        blogContent.textContent = blog.content;
-      }
+      if (blogTitle) blogTitle.textContent = blog.title;
+      if (blogMeta) blogMeta.textContent = `${blog.category} · ${new Date(blog.createdAt).toLocaleDateString()}`;
+      if (blogContent) blogContent.textContent = blog.content;
+
       detailContainer.hidden = false;
-      if (emptyState) {
-        emptyState.hidden = true;
-      }
+      if (emptyState) emptyState.hidden = true;
 
       const editBtn = document.getElementById('edit-blog-btn');
       const deleteBtn = document.getElementById('delete-blog-btn');
@@ -176,20 +225,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (deleteBtn) {
         deleteBtn.onclick = async () => {
-          if (confirm('Are you sure you want to delete this blog post?')) {
-            try {
-              const res = await fetch(`${apiBaseUrl}/api/blogs/${blog.id}`, {
-                method: 'DELETE'
-              });
-              if (res.ok) {
-                window.location.href = 'dashboard.html';
-              } else {
-                alert('Failed to delete blog.');
-              }
-            } catch (err) {
-              console.error(err);
-              alert('Error deleting blog.');
+          const confirmed = window.confirm('Delete this blog?');
+          if (!confirmed) return;
+
+          try {
+            const response = await fetch(`${apiBaseUrl}/api/blogs/${blog.id}`, { method: 'DELETE' });
+            const data = await response.json().catch(() => ({ message: 'Unable to delete blog.' }));
+            if (!response.ok) {
+              throw new Error(data.message || 'Unable to delete blog.');
             }
+            window.location.href = 'dashboard.html';
+          } catch (error) {
+            console.error('Unable to delete blog', error);
+            window.alert(error.message || 'Unable to delete blog.');
           }
         };
       }
@@ -203,51 +251,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Adapter for Edit Mode on create-blog page
-  const setupEditMode = () => {
-    const params = new URLSearchParams(window.location.search);
-    const editBlogId = params.get('id');
-    const isEditMode = window.location.pathname.includes('create-blog.html') && editBlogId;
-
-    if (isEditMode) {
-      const form = document.getElementById('blog-form');
-      if (form) {
-        const heading = document.querySelector('.create-grid h1');
-        if (heading) {
-          heading.textContent = 'Edit your story.';
-        }
-        const eyebrow = document.querySelector('.create-grid .eyebrow');
-        if (eyebrow) {
-          eyebrow.textContent = 'Edit Mode';
-        }
-        const submitBtn = form.querySelector('button[type="submit"]');
-        if (submitBtn) {
-          submitBtn.textContent = 'Update post';
-        }
-
-        fetch(`${apiBaseUrl}/api/blogs/${editBlogId}`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.blog) {
-              form.querySelector('[name="title"]').value = data.blog.title || '';
-              form.querySelector('[name="category"]').value = data.blog.category || '';
-              form.querySelector('[name="content"]').value = data.blog.content || '';
-            }
-          })
-          .catch((err) => console.error('Error fetching blog for edit:', err));
-      }
+  const setupBlogForm = () => {
+    const form = document.getElementById('blog-form');
+    if (!form) {
+      return;
     }
-  };
 
-  loadBlogs();
-  loadBlogDetail();
-  setupEditMode();
+    const params = new URLSearchParams(window.location.search);
+    const blogId = params.get('id');
+    const submitButton = form.querySelector('button[type="submit"]');
 
-  const forms = document.querySelectorAll('form');
-  forms.forEach((form) => {
+    if (blogId) {
+      form.dataset.mode = 'edit';
+      form.dataset.blogId = blogId;
+      if (submitButton) {
+        submitButton.textContent = 'Update post';
+      }
+
+      fetch(`${apiBaseUrl}/api/blogs/${blogId}`)
+        .then((response) => response.json())
+        .then((data) => {
+          if (!data.blog) {
+            return;
+          }
+          form.querySelector('[name="title"]').value = data.blog.title || '';
+          form.querySelector('[name="category"]').value = data.blog.category || '';
+          form.querySelector('[name="content"]').value = data.blog.content || '';
+        })
+        .catch((error) => {
+          console.error('Unable to populate blog form', error);
+        });
+    }
+
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
-      const feedback = form.querySelector('.feedback');
       const isValid = Array.from(form.querySelectorAll('input, textarea')).every((field) => field.checkValidity());
 
       if (!isValid) {
@@ -255,7 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const submitButton = form.querySelector('button[type="submit"]');
       if (submitButton && !submitButton.dataset.originalText) {
         submitButton.dataset.originalText = submitButton.textContent;
       }
@@ -266,29 +302,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       try {
         const payload = getFormPayload(form);
-        let endpoint = '';
-        let method = 'POST';
-        let successMessage = form.dataset.feedback || 'Submission received.';
-
-        if (form.id === 'register-form') {
-          endpoint = '/api/register';
-        } else if (form.id === 'login-form') {
-          endpoint = '/api/login';
-        } else if (form.id === 'blog-form') {
-          const editId = new URLSearchParams(window.location.search).get('id');
-          if (editId) {
-            endpoint = `/api/blogs/${editId}`;
-            method = 'PUT';
-            successMessage = 'Your blog has been updated successfully.';
-          } else {
-            endpoint = '/api/blogs';
-            method = 'POST';
-          }
-        }
+        const isEditMode = form.dataset.mode === 'edit' && form.dataset.blogId;
+        const method = isEditMode ? 'PUT' : 'POST';
+        const endpoint = isEditMode ? `/api/blogs/${form.dataset.blogId}` : '/api/blogs';
 
         const response = await fetch(`${apiBaseUrl}${endpoint}`, {
-          method: method,
-          headers: { 'Content-Type': 'application/json' },
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+          },
           body: JSON.stringify(payload)
         });
 
@@ -297,24 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(data.message || 'Something went wrong.');
         }
 
-        if (form.id === 'login-form' || form.id === 'register-form') {
-          localStorage.setItem('blogNexusUser', JSON.stringify(data.user));
-          successMessage = data.message || successMessage;
-          if (form.id === 'login-form') {
-            window.location.href = 'dashboard.html';
-            return;
-          }
-          window.location.href = 'login.html';
-          return;
-        }
-
-        if (form.id === 'blog-form') {
-          window.location.href = 'dashboard.html';
-          return;
-        }
-
-        setFeedback(form, data.message || successMessage);
-        form.reset();
+        window.location.href = 'dashboard.html';
       } catch (error) {
         setFeedback(form, error.message || 'Unable to complete your request.', true);
       } finally {
@@ -324,5 +330,86 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
-  });
+  };
+
+  const setupAuthForms = () => {
+    const forms = document.querySelectorAll('form:not(#blog-form)');
+    forms.forEach((form) => {
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const isValid = Array.from(form.querySelectorAll('input, textarea')).every((field) => field.checkValidity());
+
+        if (!isValid) {
+          setFeedback(form, 'Please complete every required field.', true);
+          return;
+        }
+
+        const submitButton = form.querySelector('button[type="submit"]');
+        if (submitButton && !submitButton.dataset.originalText) {
+          submitButton.dataset.originalText = submitButton.textContent;
+        }
+        if (submitButton) {
+          submitButton.disabled = true;
+          submitButton.textContent = 'Please wait...';
+        }
+
+        try {
+          const payload = getFormPayload(form);
+          let endpoint = '';
+          const successMessage = form.dataset.feedback || 'Submission received.';
+
+          if (form.id === 'register-form') {
+            endpoint = '/api/register';
+          } else if (form.id === 'login-form') {
+            endpoint = '/api/login';
+          }
+
+          const response = await fetch(`${apiBaseUrl}${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await response.json().catch(() => ({ message: 'Request failed.' }));
+          if (!response.ok) {
+            throw new Error(data.message || 'Something went wrong.');
+          }
+
+          if (form.id === 'login-form' || form.id === 'register-form') {
+            if (data.token) {
+              setAuthToken(data.token);
+            }
+            localStorage.setItem('blogNexusUser', JSON.stringify(data.user));
+            if (form.id === 'login-form') {
+              window.location.href = 'dashboard.html';
+              return;
+            }
+            window.location.href = 'login.html';
+            return;
+          }
+
+          setFeedback(form, data.message || successMessage);
+          form.reset();
+        } catch (error) {
+          setFeedback(form, error.message || 'Unable to complete your request.', true);
+        } finally {
+          if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = submitButton.dataset.originalText || submitButton.textContent;
+          }
+        }
+      });
+    });
+  };
+
+  if (document.getElementById('blog-list')) {
+    loadBlogs();
+  }
+
+  if (document.getElementById('blog-detail')) {
+    loadBlogDetail();
+  }
+
+  setupBlogForm();
+  setupAuthForms();
 });
